@@ -1,0 +1,72 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: cosplay_images
+    // Document ID: auto-generated or specific ID
+    // Fields:
+    //   - url: string (required, valid URL) - The URL of the image
+    //   - filename: string (required) - The filename of the image
+    //   - uploadedAt: string (required, ISO 8601 date string) - Upload timestamp
+    //   - tags: list of strings (optional) - Tags for the image
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.email == "xdjameherobrine@gmail.com" && request.auth.token.email_verified == true;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*") || url.matches("^/.*"));
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
+    }
+
+    function isValidTags(tags) {
+      return tags is list && tags.size() <= 20;
+    }
+
+    function isValidCosplayImage() {
+      return hasRequiredFields(['url', 'filename', 'uploadedAt']) &&
+             hasOnlyAllowedFields(['url', 'filename', 'uploadedAt', 'tags']) &&
+             isValidUrl(request.resource.data.url) &&
+             request.resource.data.filename is string &&
+             request.resource.data.filename.size() > 0 &&
+             request.resource.data.filename.size() < 255 &&
+             isValidDateString(request.resource.data.uploadedAt) &&
+             (!('tags' in request.resource.data) || isValidTags(request.resource.data.tags));
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    match /cosplay_images/{imageId} {
+      // Anyone can read the images metadata
+      allow read: if true;
+      
+      // Allow writes for the server sync module (In production, use Admin SDK)
+      allow write: if true;
+    }
+  }
+}

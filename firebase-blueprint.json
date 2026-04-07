@@ -1,0 +1,41 @@
+{
+  "entities": {
+    "CosplayImage": {
+      "title": "Cosplay Image",
+      "description": "Metadata for a cosplay image served by the CDN",
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "The URL of the image"
+        },
+        "filename": {
+          "type": "string",
+          "description": "The filename of the image in the local directory"
+        },
+        "uploadedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When the image was uploaded"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tags associated with the image"
+        }
+      },
+      "required": ["url", "filename", "uploadedAt"]
+    }
+  },
+  "firestore": {
+    "/cosplay_images/{imageId}": {
+      "schema": {
+        "$ref": "#/entities/CosplayImage"
+      },
+      "description": "Stores metadata for cosplay images"
+    }
+  }
+}
